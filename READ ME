@@ -1,0 +1,80 @@
+# Video Generation API
+
+## Overview
+This API allows users to generate videos based on a textual prompt using AI models. The API supports various parameters to customize the output, including video length, aspect ratio, and negative prompts to refine results.
+
+## Endpoint
+**POST** `https://api.segmind.com/v1/wan2.1-t2v`
+
+## Authentication
+API requests require an API key, which should be included in the headers:
+```
+'x-api-key': YOUR_API_KEY
+```
+
+## Request Parameters
+
+| Parameter        | Type   | Required | Description |
+|-----------------|--------|----------|-------------|
+| prompt         | str    | ✅ Yes  | Text prompt describing the video content |
+| negative_prompt | str    | ❌ No  | Words to exclude from the generated video (default: blurry, bad quality, camera shake, distortion, poor composition, low resolution, artifact, watermark) |
+| seed           | int    | ❌ No  | Random seed for reproducibility (default: 42424242) |
+| video_length   | int    | ✅ Yes  | Length of the generated video in seconds (min: 1, max: 5) |
+| base_model     | str    | ✅ Yes  | AI model used for generation (Allowed: `1.3b`) |
+| aspect_ratio   | str    | ✅ Yes  | Output video aspect ratio (Allowed: `1:1`) |
+| steps          | int    | ❌ No  | Number of processing steps (default: 30, min: 10, max: 70) |
+| base64         | bool   | ❌ No  | If `True`, returns video in base64 format (default: `1`) |
+
+## Example Request
+```python
+import requests
+import base64
+
+api_key = "YOUR_API_KEY"
+url = "https://api.segmind.com/v1/wan2.1-t2v"
+
+payload = {
+    "prompt": "A sunset over the ocean with birds flying",
+    "negative_prompt": "blurry, low resolution",
+    "seed": 12345678,
+    "video_length": 3,
+    "base_model": "1.3b",
+    "aspect_ratio": "1:1",
+    "steps": 30,
+    "base64": True
+}
+
+headers = {"x-api-key": api_key}
+response = requests.post(url, json=payload, headers=headers)
+
+if response.status_code == 200:
+    data = response.json()
+    if "video" in data:
+        video_data = base64.b64decode(data["video"])
+        with open("output.mp4", "wb") as f:
+            f.write(video_data)
+        print("Video saved as output.mp4")
+    else:
+        print("No video data received.")
+else:
+    print(f"Error: {response.status_code}, {response.text}")
+```
+
+## HTTP Response Codes
+
+| Code | Status | Description |
+|------|--------|-------------|
+| 200  | OK     | Video successfully generated |
+| 401  | Unauthorized | Invalid API key |
+| 404  | Not Found | The requested URL does not exist |
+| 405  | Method Not Allowed | The requested HTTP method is not allowed |
+| 406  | Not Acceptable | Insufficient credits to process the request |
+| 500  | Server Error | Internal server error |
+
+## Notes
+- Ensure that your API key is valid and has sufficient credits.
+- The generated video will be saved as `output.mp4` when using the provided Python script.
+- Adjusting the `steps` parameter can impact the quality and processing time of the video.
+
+---
+For further assistance, visit the official API documentation or contact support.
