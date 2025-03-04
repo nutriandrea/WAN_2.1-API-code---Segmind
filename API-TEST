@@ -1,0 +1,49 @@
+import requests
+import base64
+
+api_key = "SG_1ec1d89d0d4b55ba"
+url = "https://api.segmind.com/v1/wan2.1-t2v"
+
+data = {
+    "prompt": "Un bambino si trova sottacqua nel mare profondo, sta facendo una fotografia ad un pesce con la sua macchina fotografica subacquea",
+    "negative_prompt": "blurry, bad quality, camera shake, distortion, poor composition, low resolution, artifact, watermark",
+    "seed": 9604478,
+    "video_length": 3,
+    "base_model": "14b",
+    "aspect_ratio": "16:9",
+    "steps": 30,
+    "base64": True
+}
+
+headers = {'x-api-key': api_key}
+
+# Send request
+response = requests.post(url, json=data, headers=headers)
+
+# Debug: Check response headers
+print(f"Response Status Code: {response.status_code}")
+print(f"Content-Type: {response.headers.get('Content-Type')}")
+
+if response.status_code == 200:
+    try:
+        response_json = response.json()
+        print(f"Response JSON: {response_json}")
+
+        if "video" in response_json:
+            base64_video = response_json["video"]
+
+            missing_padding = len(base64_video) % 4
+            if missing_padding:
+                base64_video += "=" * (4 - missing_padding)
+
+            with open("output.mp4", "wb") as f:
+                f.write(base64.b64decode(base64_video))
+
+            print("Video saved as output.mp4")
+        else:
+            print("No 'video' field found in JSON response.")
+
+    except requests.exceptions.JSONDecodeError:
+        print("Failed to parse JSON response.")
+else:
+    print(f"API request failed with status code {response.status_code}: {response.text}")
